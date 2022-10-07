@@ -256,6 +256,7 @@ describe("TONStarter TON Upgrade", function () {
     it("swap test with tonStakeUpgrade5 ", async () => {
 
       const amount = ethers.BigNumber.from("25000000000000000000000000000000");
+      console.log("스왑하려는 wton 양 ",amount.toString());
 
       ///---
       const quoter = await ethers.getContractAt(QuoterABI, quoterAddress, provider);
