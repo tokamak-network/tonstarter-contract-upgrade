@@ -192,7 +192,7 @@ contract TokamakStakeUpgrade5 is
     }
 
     function version() external pure returns (string memory) {
-        return "phase1.upgrade.v4";
+        return "phase1.upgrade.v5";
     }
 
     function getQuoteAtTick(
