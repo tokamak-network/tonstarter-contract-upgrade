@@ -5,7 +5,7 @@ import "../stake/StakeTONStorage.sol";
 import "../common/AccessibleCommon.sol";
 import "../libraries/FixedPoint96.sol";
 import "../libraries/OracleLibrary.sol";
-import "hardhat/console.sol";
+// import "hardhat/console.sol";
 
 interface IQuoter {
      function quoteExactInput(bytes memory path, uint256 amountIn) external returns (uint256 amountOut);
