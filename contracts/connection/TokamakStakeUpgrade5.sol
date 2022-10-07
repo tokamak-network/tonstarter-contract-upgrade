@@ -239,10 +239,8 @@ contract TokamakStakeUpgrade5 is
 
             if (_amountWTON < amountIn) {
                 bytes memory data = abi.encode(swapProxy, swapProxy);
-                // uint256 swapTON = (amountIn - _amountWTON) / (10**9);
-                uint256 swapTON = _amountTON;
                 require(
-                    ITON(ton).approveAndCall(wton, swapTON, data),
+                    ITON(ton).approveAndCall(wton, _amountTON, data),
                     "TokamakStaker:exchangeWTONtoTOS approveAndCall fail"
                 );
             }

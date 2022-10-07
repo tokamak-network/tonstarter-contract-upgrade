@@ -216,6 +216,10 @@ describe("TONStarter TON Upgrade", function () {
         "swapTonToWton()"
       );
 
+      console.log("exchangeWTONtoTOS, ", _exchangeWTONtoTOS );
+      console.log("swapWtonToTOS, ", _swapWtonToTOS );
+      console.log("swapTonToWton, ", _swapTonToWton );
+
       const tx1 = await StakeTONProxy2Contract.connect(
         tonstarterAdmin
       ).setSelectorImplementations2(
@@ -225,7 +229,7 @@ describe("TONStarter TON Upgrade", function () {
           _swapTonToWton
         ],
         tonStakeUpgrade5.address);
-      // console.log("setSelectorImplementations2, ", _exchangeWTONtoTOSAdvance );
+
 
       await tx1.wait();
 
