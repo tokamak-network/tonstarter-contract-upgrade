@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.4;
+pragma solidity ^0.8.16;
 
 import "../interfaces/IPublicSaleProxyFactory.sol";
 import {PublicSaleProxy} from "../sale/PublicSaleProxy.sol";
