@@ -247,25 +247,29 @@ describe("TONStarter TON Upgrade", function () {
       // 스왑하려는 wton 양을 찿는다.
       let totalBalance = balanceWTON.add(balanceTON.mul(ethers.BigNumber.from("1000000000")))
       let amount = totalBalance;
-      console.log("the amount of WTON to swap ",amount.toString());
+      console.log("the amount of WTON to swap ", ethers.utils.formatUnits(amount, 27) ,"WTON");
 
       ///---
       const quoter = await ethers.getContractAt(QuoterABI, quoterAddress, provider);
       let _quoteExactInput = await quoter.connect(admin1).callStatic.quoteExactInput(
-        encodePath([wtonAddress,tosAddress], [3000]),amount);
-      console.log("The amount of TOS swapped when you actually swap in Uniswap : _quoteExactInput  ", _quoteExactInput.toString());
+        encodePath([wtonAddress,tosAddress], [3000]), amount);
+      console.log("The amount of TOS swapped when you actually swap in Uniswap : _quoteExactInput  ",
+        ethers.utils.formatUnits(_quoteExactInput, 18) , 'TOS'
+      //_quoteExactInput.toString()
+      );
 
       ///--
       const limitPrameters = await tonStakeUpgrade6.connect(admin1)
         .limitPrameters(amount, poolAddress, wtonAddress, tosAddress, ethers.BigNumber.from("18"));
-      console.log("Minimum swap amount allowed : limitPrameters",limitPrameters[0]);
+      console.log("Minimum swap amount allowed : limitPrameters", ethers.utils.formatUnits(limitPrameters[0], 18) );
 
       if (limitPrameters[0].gt(_quoteExactInput)) { // re-calculate amount what want to swap
+
         let _quoteExactOut = await quoter.connect(admin1).callStatic.quoteExactOutput(
           encodePath([tosAddress, wtonAddress], [3000]),
-          _quoteExactInput.mul(ethers.BigNumber.from("995")).div(ethers.BigNumber.from("10000")));
+          limitPrameters[0].mul(ethers.BigNumber.from("995")).div(ethers.BigNumber.from("10000")));
 
-          console.log("re-calculate the input amount of WTON to swap ", _quoteExactOut.toString());
+          console.log("re-calculate the input amount of WTON to swap ", ethers.utils.formatUnits(_quoteExactOut, 27), "WTON");
           amount = _quoteExactOut;
       }
 
@@ -274,7 +278,8 @@ describe("TONStarter TON Upgrade", function () {
       await tx.wait();
 
       const _balanceAfterSwap = await wtonContract.connect(admin1).balanceOf(tonStakeProxyAddress);
-      console.log("wtonContract _balanceAfterSwap, ", tonStakeProxyAddress, _balanceAfterSwap.toString());
+      console.log("wtonContract _balanceAfterSwap, ", tonStakeProxyAddress,
+      ethers.utils.formatUnits(_balanceAfterSwap, 27) );
 
     });
 
