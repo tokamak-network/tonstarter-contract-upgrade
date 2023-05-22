@@ -260,14 +260,26 @@ describe("TONStarter TON Upgrade", function () {
 
       ///--
       const limitPrameters = await tonStakeUpgrade6.connect(admin1)
-        .limitPrameters(amount, poolAddress, wtonAddress, tosAddress, ethers.BigNumber.from("18"));
-      console.log("Minimum swap amount allowed : limitPrameters", ethers.utils.formatUnits(limitPrameters[0], 18) );
+        .limitPrameters(amount, poolAddress, wtonAddress, tosAddress, ethers.BigNumber.from("36"));
+      console.log("Minimum swap amount allowed : limitPrameters", ethers.utils.formatUnits(limitPrameters[0], 18), 'TOS' );
+
+      let _quoteExactInput1 = await quoter.connect(admin1).callStatic.quoteExactInputSingle(
+        wtonAddress,
+        tosAddress,
+        3000,
+        amount,
+        limitPrameters[2]);
+
+      console.log("_quoteExactInput1  ",
+        ethers.utils.formatUnits(_quoteExactInput1, 18) , 'TOS');
+
 
       if (limitPrameters[0].gt(_quoteExactInput)) { // re-calculate amount what want to swap
 
         let _quoteExactOut = await quoter.connect(admin1).callStatic.quoteExactOutput(
           encodePath([tosAddress, wtonAddress], [3000]),
-          limitPrameters[0].mul(ethers.BigNumber.from("995")).div(ethers.BigNumber.from("10000")));
+          _quoteExactInput1.mul(ethers.BigNumber.from("10005")).div(ethers.BigNumber.from("10000"))
+          );
 
           console.log("re-calculate the input amount of WTON to swap ", ethers.utils.formatUnits(_quoteExactOut, 27), "WTON");
           amount = _quoteExactOut;
