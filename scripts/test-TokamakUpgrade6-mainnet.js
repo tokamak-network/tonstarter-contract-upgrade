@@ -15,6 +15,7 @@ const wtonAddress = "0xc4A11aaf6ea915Ed7Ac194161d2fC9384F15bff2";
 const tosABI = require("../abis/TOS.json").abi;
 const TokamakStakeUpgrade6Abi = require("../artifacts/contracts/connection/TokamakStakeUpgrade6.sol/TokamakStakeUpgrade6.json").abi;
 const QuoterABI = require("../abis/Quoter.json").abi;
+const UniswapV3PoolAbi = require("../abis/UniswapV3Pool.json").abi;
 
 const ADDR_SIZE = 20
 const FEE_SIZE = 3
@@ -63,6 +64,25 @@ async function testSwap() {
   );
   console.log("tonStakeUpgrade6, ", tonStakeUpgrade6.address);
 
+  let changeTick = 0;
+
+  /* 메인넷 배포후, 아래 실행가능함.
+  //-- check the swapable environment
+  let UniswapV3Pool =  await ethers.getContractAt(UniswapV3PoolAbi, poolAddress, provider);
+  let slot0 = await UniswapV3Pool.slot0();
+
+  let averageTick = await tonStakeUpgrade6.consult(poolAddress, 120);
+  let acceptTickIntervalInOracle = await tonStakeUpgrade6.acceptTickIntervalInOracle();
+  let acceptMaxTick = await tonStakeUpgrade6.acceptMaxTick(averageTick, 60, acceptTickIntervalInOracle)
+  changeTick = await tonStakeUpgrade6.changeTick();
+  if (changeTick == 0) changeTick = 18;
+  if(slot0.tick > acceptMaxTick) {
+    console.log('The current price is greater than the average price over the last 2 minutes. Swap is not supported in this environment.')
+
+    return ;
+  }
+  */
+  if (changeTick == 0) changeTick = 18;
 
   // calculate swapable amount
    // 현재 보유하고 있는 wton 의 잔액 (톤을 포함)
@@ -87,7 +107,7 @@ async function testSwap() {
    );
 
    ///--
-   const limitPrameters = await tonStakeUpgrade6.limitPrameters(amount, poolAddress, wtonAddress, tosAddress, ethers.BigNumber.from("36"));
+   const limitPrameters = await tonStakeUpgrade6.limitPrameters(amount, poolAddress, wtonAddress, tosAddress,  changeTick);
    console.log("Minimum swap amount allowed : limitPrameters", ethers.utils.formatUnits(limitPrameters[0], 18), 'TOS' );
 
    let _quoteExactInput1 = await quoter.connect(deployer).callStatic.quoteExactInputSingle(
@@ -112,13 +132,13 @@ async function testSwap() {
   }
 
   // swap
-  const tx = await tonStakeUpgrade6.connect(deployer).exchangeWTONtoTOS(amount);
-  console.log("exchangeWTONtoTOS tx: ", tx.hash);
+  // const tx = await tonStakeUpgrade6.connect(deployer).exchangeWTONtoTOS(amount);
+  // console.log("exchangeWTONtoTOS tx: ", tx.hash);
 
-  await tx.wait();
+  // await tx.wait();
 
-  const _balanceAfterSwap = await wtonContract.connect(deployer).balanceOf(tonStakeProxyAddress);
-  console.log("wtonContract _balanceAfterSwap, ", tonStakeProxyAddress, ethers.utils.formatUnits(_balanceAfterSwap, 27) );
+  // const _balanceAfterSwap = await wtonContract.connect(deployer).balanceOf(tonStakeProxyAddress);
+  // console.log("wtonContract _balanceAfterSwap, ", tonStakeProxyAddress, ethers.utils.formatUnits(_balanceAfterSwap, 27) );
 
   return null;
 }
