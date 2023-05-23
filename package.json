@@ -15,7 +15,8 @@
     "hardhat-gas-reporter": "^1.0.8",
     "jsbi": "^4.3.0",
     "solidity-coverage": "^0.7.21",
-    "web3-eth-abi": "^1.7.3"
+    "web3-eth-abi": "^1.7.3",
+    "web3-utils": "^1.10.0"
   },
   "dependencies": {
     "@openzeppelin/contracts": "^4.5.0",

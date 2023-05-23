@@ -2,7 +2,10 @@ const chai = require("chai");
 const Web3EthAbi = require("web3-eth-abi");
 
 require("chai").should();
-
+const { expect } = require("chai");
+const {
+  keccak256,
+} = require("web3-utils");
 const hre = require("hardhat");
 const { ethers } = require("hardhat");
 let accounts, admin1, provider;
@@ -155,7 +158,11 @@ describe("TONStarter TON Upgrade", function () {
   });
 
   describe(" contract  ", () => {
+
     it("tosContract ", async () => {
+
+      console.log("PHASE1.SWAPTOS.BURNPERCENT", keccak256("PHASE1.SWAPTOS.BURNPERCENT"))
+
       tosContract = await ethers.getContractAt(tosABI, tosAddress, provider);
       console.log("tosContract, ", tosContract.address);
     });
@@ -366,6 +373,15 @@ describe("TONStarter TON Upgrade", function () {
       console.log('changeTick:', changeTick)
 
     });
+
+    // it("setAcceptTickIntervalInOracle : user can not excute setAcceptTickIntervalInOracle  ", async () => {
+
+    //   expect(await tonStakeUpgrade6.isAdmin(admin1.address)).to.be.eq(false)
+
+    //   await expect(tonStakeUpgrade6.connect(admin1).setAcceptTickIntervalInOracle(2)).to.be.revertedWith("not admin") ;
+
+    // });
+
  /*
     it("setAcceptTickIntervalInOracle  ", async () => {
 
