@@ -273,7 +273,7 @@ contract TokamakStakeUpgrade6 is
             "over changed tick range."
         );
 
-        if (changeTick == 0) changeTick = 36;
+        if (changeTick == 0) changeTick = 18;
 
         (uint256 amountOutMinimum, , uint160 sqrtPriceLimitX96)
             = ISelf(address(this)).limitPrameters(amountIn, address(pool), wton, token, changeTick);
@@ -382,10 +382,10 @@ contract TokamakStakeUpgrade6 is
 
         int24 _tick = tick;
         if(token0 < token1) {
-            _tick = tick - acceptTickCounts * 60;
+            _tick = tick - (acceptTickCounts * 60);
             if(_tick < TickMath.MIN_TICK ) _tick =  TickMath.MIN_TICK ;
         } else {
-            _tick = tick + acceptTickCounts * 60;
+            _tick = tick + (acceptTickCounts * 60);
             if(_tick > TickMath.MAX_TICK ) _tick =  TickMath.MAX_TICK ;
         }
         address token1_ = token1;

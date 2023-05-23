@@ -177,9 +177,9 @@ describe("TONStarter TON Upgrade", function () {
         "TokamakStakeUpgrade6"
       );
       const tonStakeUpgrade6 = await TokamakStakeUpgrade6.deploy();
-      await tonStakeUpgrade6.deployed();
-      console.log("tonStakeUpgrade6:", tonStakeUpgrade6.address);
-
+      let deployedtx = await tonStakeUpgrade6.deployed();
+      // console.log("tonStakeUpgrade6:", tonStakeUpgrade6.address);
+      // console.log('TokamakStakeUpgrade6 deployed tx', deployedtx)
       //= =================================
       const StakeTONProxy2Contract = await ethers.getContractAt(
         StakeTONProxy2Abi,
@@ -196,6 +196,8 @@ describe("TONStarter TON Upgrade", function () {
 
       await tx.wait();
 
+      // let receipt1 = await ethers.provider.getTransactionReceipt(tx.hash)
+      // console.log('setImplementation2 tx', receipt1)
       //= =================================
 
       const _exchangeWTONtoTOS = Web3EthAbi.encodeFunctionSignature(
@@ -214,6 +216,9 @@ describe("TONStarter TON Upgrade", function () {
 
 
       await tx1.wait();
+
+      //  let receipt1 = await ethers.provider.getTransactionReceipt(tx1.hash)
+      // console.log('setSelectorImplementations2 tx', receipt1)
 
     });
 
@@ -260,7 +265,7 @@ describe("TONStarter TON Upgrade", function () {
 
       ///--
       const limitPrameters = await tonStakeUpgrade6.connect(admin1)
-        .limitPrameters(amount, poolAddress, wtonAddress, tosAddress, ethers.BigNumber.from("36"));
+        .limitPrameters(amount, poolAddress, wtonAddress, tosAddress, ethers.BigNumber.from("18"));
       console.log("Minimum swap amount allowed : limitPrameters", ethers.utils.formatUnits(limitPrameters[0], 18), 'TOS' );
 
       let _quoteExactInput1 = await quoter.connect(admin1).callStatic.quoteExactInputSingle(
@@ -270,8 +275,7 @@ describe("TONStarter TON Upgrade", function () {
         amount,
         limitPrameters[2]);
 
-      console.log("_quoteExactInput1  ",
-        ethers.utils.formatUnits(_quoteExactInput1, 18) , 'TOS');
+      console.log("_quoteExactInput1  ",  ethers.utils.formatUnits(_quoteExactInput1, 18) , 'TOS');
 
 
       if (limitPrameters[0].gt(_quoteExactInput)) { // re-calculate amount what want to swap
@@ -287,7 +291,14 @@ describe("TONStarter TON Upgrade", function () {
 
       // swap
       const tx = await tonStakeUpgrade6.connect(admin1).exchangeWTONtoTOS(amount);
+
+      console.log('exchangeWTONtoTOS tx:', tx.hash)
+
+
       await tx.wait();
+
+      // let receipt = await ethers.provider.getTransactionReceipt(tx.hash)
+      // console.log(receipt)
 
       const _balanceAfterSwap = await wtonContract.connect(admin1).balanceOf(tonStakeProxyAddress);
       console.log("wtonContract _balanceAfterSwap, ", tonStakeProxyAddress,
