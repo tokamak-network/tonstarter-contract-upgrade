@@ -267,13 +267,13 @@ contract TokamakStakeUpgrade6 is
         require(sqrtPriceX96 > 0, "pool is not initialized");
 
         int24 timeWeightedAverageTick = OracleLibrary.consult(address(pool), 120);
+        if (changeTick == 0) changeTick = 18;
+        if (acceptTickIntervalInOracle == 0) acceptTickIntervalInOracle = 8;
 
         require(
-            tick < ISelf(address(this)).acceptMaxTick(timeWeightedAverageTick, 60, 2),
+            tick < ISelf(address(this)).acceptMaxTick(timeWeightedAverageTick, 60, acceptTickIntervalInOracle),
             "over changed tick range."
         );
-
-        if (changeTick == 0) changeTick = 18;
 
         (uint256 amountOutMinimum, , uint160 sqrtPriceLimitX96)
             = ISelf(address(this)).limitPrameters(amountIn, address(pool), wton, token, changeTick);
@@ -418,13 +418,26 @@ contract TokamakStakeUpgrade6 is
         return abi.decode(reason, (uint256));
     }
 
-    function setChangeTick(int24 _newTick) external onlyOwner {
+    function setChangeTick(int24 _newTick) external {
+        require(ISelf(address(this)).isAdmin(msg.sender), "not admin");
         require(changeTick != _newTick, "same");
         changeTick = _newTick;
     }
 
-    function setQuoter(address _newQuoter) external onlyOwner {
+    function setAcceptTickIntervalInOracle(int24 _newTick) external {
+        require(ISelf(address(this)).isAdmin(msg.sender), "not admin");
+        require(acceptTickIntervalInOracle != _newTick, "same");
+        acceptTickIntervalInOracle = _newTick;
+    }
+
+    function setQuoter(address _newQuoter) external {
+        require(ISelf(address(this)).isAdmin(msg.sender), "not admin");
         require(quoter != _newQuoter, "same");
         quoter = _newQuoter;
     }
+
+    function consult(address pool, uint32 period) external view returns (int24 timeWeightedAverageTick) {
+        return OracleLibrary.consult(pool, period);
+    }
+
 }

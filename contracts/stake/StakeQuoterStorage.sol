@@ -5,4 +5,5 @@ pragma solidity ^0.8.4;
 contract StakeQuoterStorage {
     address public quoter;
     int24 public changeTick;
+    int24 public acceptTickIntervalInOracle;
 }

@@ -203,14 +203,40 @@ describe("TONStarter TON Upgrade", function () {
       const _exchangeWTONtoTOS = Web3EthAbi.encodeFunctionSignature(
         "exchangeWTONtoTOS(uint256)"
       );
+      const _setChangeTick = Web3EthAbi.encodeFunctionSignature(
+        "setChangeTick(int24)"
+      );
+      const _setQuoter = Web3EthAbi.encodeFunctionSignature(
+        "setQuoter(address)"
+      );
+      const _setAcceptTickIntervalInOracle = Web3EthAbi.encodeFunctionSignature(
+        "setAcceptTickIntervalInOracle(int24)"
+      );
+      const _changeTick = Web3EthAbi.encodeFunctionSignature(
+        "changeTick()"
+      );
+      const _acceptTickIntervalInOracle = Web3EthAbi.encodeFunctionSignature(
+        "acceptTickIntervalInOracle()"
+      );
+      const _consult = Web3EthAbi.encodeFunctionSignature(
+        "consult(address,uint32)"
+      );
 
       console.log("exchangeWTONtoTOS, ", _exchangeWTONtoTOS );
+      console.log("setChangeTick, ", _setChangeTick );
+      console.log("setAcceptTickIntervalInOracle, ", _setAcceptTickIntervalInOracle );
+      console.log("setQuoter, ", _setQuoter );
+      console.log("changeTick, ", _changeTick );
+      console.log("acceptTickIntervalInOracle, ", _acceptTickIntervalInOracle );
+      console.log("consult, ", _consult );
 
       const tx1 = await StakeTONProxy2Contract.connect(
         tonstarterAdmin
       ).setSelectorImplementations2(
         [
-          _exchangeWTONtoTOS
+          _exchangeWTONtoTOS,_setChangeTick,
+          _setAcceptTickIntervalInOracle,_setQuoter,
+          _changeTick,_acceptTickIntervalInOracle,_consult
         ],
         tonStakeUpgrade6.address);
 
@@ -238,9 +264,26 @@ describe("TONStarter TON Upgrade", function () {
         provider
       );
       console.log("tonStake1, ", tonStake1.address);
+
     });
 
     it("swap test with tonStakeUpgrade6 ", async () => {
+       //-- check the swapable environment
+       let UniswapV3Pool =  await ethers.getContractAt(UniswapV3PoolAbi, poolAddress, provider);
+       let slot0 = await UniswapV3Pool.slot0();
+
+       let averageTick = await tonStakeUpgrade6.consult(poolAddress,120);
+       let acceptTickIntervalInOracle = await tonStakeUpgrade6.acceptTickIntervalInOracle();
+       let acceptMaxTick = await tonStakeUpgrade6.acceptMaxTick(averageTick, 60, acceptTickIntervalInOracle)
+
+       let changeTick = await tonStakeUpgrade6.changeTick();
+       if (changeTick == 0) changeTick = 18;
+
+       if(slot0.tick > acceptMaxTick) {
+         console.log('The current price is greater than the average price over the last 2 minutes. Swap is not supported in this environment.')
+
+         return ;
+       }
 
       // 현재 보유하고 있는 wton 의 잔액 (톤을 포함)
       let balanceWTON = await wtonContract.balanceOf(tonStakeProxyAddress);
@@ -265,7 +308,133 @@ describe("TONStarter TON Upgrade", function () {
 
       ///--
       const limitPrameters = await tonStakeUpgrade6.connect(admin1)
-        .limitPrameters(amount, poolAddress, wtonAddress, tosAddress, ethers.BigNumber.from("18"));
+        .limitPrameters(amount, poolAddress, wtonAddress, tosAddress, changeTick);
+      console.log("Minimum swap amount allowed : limitPrameters", ethers.utils.formatUnits(limitPrameters[0], 18), 'TOS' );
+
+      let _quoteExactInput1 = await quoter.connect(admin1).callStatic.quoteExactInputSingle(
+        wtonAddress,
+        tosAddress,
+        3000,
+        amount,
+        limitPrameters[2]);
+
+      console.log("_quoteExactInput1  ",  ethers.utils.formatUnits(_quoteExactInput1, 18) , 'TOS');
+
+
+      if (limitPrameters[0].gt(_quoteExactInput)) { // re-calculate amount what want to swap
+
+        let _quoteExactOut = await quoter.connect(admin1).callStatic.quoteExactOutput(
+          encodePath([tosAddress, wtonAddress], [3000]),
+          _quoteExactInput1.mul(ethers.BigNumber.from("10005")).div(ethers.BigNumber.from("10000"))
+          );
+
+          console.log("re-calculate the input amount of WTON to swap ", ethers.utils.formatUnits(_quoteExactOut, 27), "WTON");
+          amount = _quoteExactOut;
+      }
+
+      // swap
+      const tx = await tonStakeUpgrade6.connect(admin1).exchangeWTONtoTOS(amount);
+
+      console.log('exchangeWTONtoTOS tx:', tx.hash)
+
+
+      await tx.wait();
+
+      // let receipt = await ethers.provider.getTransactionReceipt(tx.hash)
+      // console.log(receipt)
+
+      const _balanceAfterSwap = await wtonContract.connect(admin1).balanceOf(tonStakeProxyAddress);
+      console.log("wtonContract _balanceAfterSwap, ", tonStakeProxyAddress,
+      ethers.utils.formatUnits(_balanceAfterSwap, 27) );
+
+    });
+
+    it("setChangeTick  ", async () => {
+
+      let isAdmin = await tonStakeUpgrade6.isAdmin(tonstarterAdmin.address)
+      console.log('isAdmin:', isAdmin)
+
+      const tonStakeUpgrade6ByAdmin = await ethers.getContractAt(
+        TokamakStakeUpgrade6Abi,
+        tonStakeProxyAddress,
+        tonstarterAdmin
+      );
+
+      await (await tonStakeUpgrade6ByAdmin.connect(tonstarterAdmin).setChangeTick(36)).wait();
+
+      let changeTick = await tonStakeUpgrade6.changeTick();
+      console.log('changeTick:', changeTick)
+
+    });
+ /*
+    it("setAcceptTickIntervalInOracle  ", async () => {
+
+      let isAdmin = await tonStakeUpgrade6.isAdmin(tonstarterAdmin.address)
+      console.log('isAdmin:', isAdmin)
+
+      const tonStakeUpgrade6ByAdmin = await ethers.getContractAt(
+        TokamakStakeUpgrade6Abi,
+        tonStakeProxyAddress,
+        tonstarterAdmin
+      );
+
+      await (await tonStakeUpgrade6ByAdmin.connect(tonstarterAdmin).setAcceptTickIntervalInOracle(2)).wait();
+
+      let acceptTickIntervalInOracle = await tonStakeUpgrade6.acceptTickIntervalInOracle();
+      console.log('acceptTickIntervalInOracle:', acceptTickIntervalInOracle)
+
+    });
+
+    it("      pass time", async function () {
+
+      ethers.provider.send("evm_increaseTime", [60*1])
+      ethers.provider.send("evm_mine")
+    });
+*/
+    it("swap test with tonStakeUpgrade6 ", async () => {
+
+      //-- check the swapable environment
+      let UniswapV3Pool =  await ethers.getContractAt(UniswapV3PoolAbi, poolAddress, provider);
+      let slot0 = await UniswapV3Pool.slot0();
+
+      let averageTick = await tonStakeUpgrade6.consult(poolAddress,120);
+      let acceptTickIntervalInOracle = await tonStakeUpgrade6.acceptTickIntervalInOracle();
+      let acceptMaxTick = await tonStakeUpgrade6.acceptMaxTick(averageTick, 60, acceptTickIntervalInOracle)
+
+      let changeTick = await tonStakeUpgrade6.changeTick();
+      if (changeTick == 0) changeTick = 18;
+
+      if(slot0.tick > acceptMaxTick) {
+        console.log('The current price is greater than the average price over the last 2 minutes. Swap is not supported in this environment.')
+
+        return ;
+      }
+
+
+      // 현재 보유하고 있는 wton 의 잔액 (톤을 포함)
+      let balanceWTON = await wtonContract.balanceOf(tonStakeProxyAddress);
+      console.log('balanceWTON',balanceWTON)
+
+      let balanceTON = await tonContract.balanceOf(tonStakeProxyAddress);
+      console.log('balanceTON',balanceTON)
+
+      // 스왑하려는 wton 양을 찿는다.
+      let totalBalance = balanceWTON.add(balanceTON.mul(ethers.BigNumber.from("1000000000")))
+      let amount = totalBalance;
+      console.log("the amount of WTON to swap ", ethers.utils.formatUnits(amount, 27) ,"WTON");
+
+      ///---
+      const quoter = await ethers.getContractAt(QuoterABI, quoterAddress, provider);
+      let _quoteExactInput = await quoter.connect(admin1).callStatic.quoteExactInput(
+        encodePath([wtonAddress,tosAddress], [3000]), amount);
+      console.log("The amount of TOS swapped when you actually swap in Uniswap : _quoteExactInput  ",
+        ethers.utils.formatUnits(_quoteExactInput, 18) , 'TOS'
+      );
+
+      ///--
+      const limitPrameters = await tonStakeUpgrade6.connect(admin1)
+        .limitPrameters(amount, poolAddress, wtonAddress, tosAddress, changeTick);
+
       console.log("Minimum swap amount allowed : limitPrameters", ethers.utils.formatUnits(limitPrameters[0], 18), 'TOS' );
 
       let _quoteExactInput1 = await quoter.connect(admin1).callStatic.quoteExactInputSingle(
