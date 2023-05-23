@@ -557,6 +557,20 @@ describe("TONStarter TON Upgrade", function () {
         let isBurner1 = await tosContract.hasRole(keccak256("BURNER"), tonStakeProxyAddress1);
         console.log("isBurner,tonStakeProxyAddress1 ", tonStakeProxyAddress1, isBurner1);
 
+        let isBurner2 = await tosContract.hasRole(keccak256("BURNER"), tonStakeProxyAddress1);
+        console.log("isBurner,tonStakeProxyAddress2 ", tonStakeProxyAddress1, isBurner2);
+
+
+        let isBurner3 = await tosContract.hasRole(keccak256("BURNER"), tonStakeProxyAddress1);
+        console.log("isBurner,tonStakeProxyAddress3 ", tonStakeProxyAddress1, isBurner3);
+
+
+        let isBurner4 = await tosContract.hasRole(keccak256("BURNER"), tonStakeProxyAddress1);
+        console.log("isBurner,tonStakeProxyAddress4 ", tonStakeProxyAddress1, isBurner4);
+
+        let isBurner5 = await tosContract.hasRole(keccak256("BURNER"), tonStakeProxyAddress1);
+        console.log("isBurner,tonStakeProxyAddress5 ", tonStakeProxyAddress1, isBurner5);
+
         // await hre.ethers.provider.send("hardhat_impersonateAccount", [
         //     tosAdminAddress,
         // ]);
@@ -577,11 +591,6 @@ describe("TONStarter TON Upgrade", function () {
         console.log("tonRegistry, ", tonRegistry.address);
 
         let _name  = "PHASE1.SWAPTOS.BURNPERCENT"
-        // console.log("_name", _name);
-        // console.log("tonStakeProxyAddress1", tonStakeProxyAddress1);
-        // console.log("ethers.constants.zeroAddress",  ethers.constants.zeroAddress );
-        // console.log("ethers.BigNumber.from(\"90\")", ethers.BigNumber.from("90"));
-
         let tx = await tonRegistry.connect(tonstarterAdmin).addDefiInfo(
             _name,
             "0xE75D8392c2EEd2425AFC7fcFba88D340b493ccC2",
