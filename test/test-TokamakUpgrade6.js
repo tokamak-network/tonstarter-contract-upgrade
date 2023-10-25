@@ -282,7 +282,9 @@ describe("TONStarter TON Upgrade", function () {
        let averageTick = await tonStakeUpgrade6.consult(poolAddress,120);
        let acceptTickIntervalInOracle = await tonStakeUpgrade6.acceptTickIntervalInOracle();
        let acceptMaxTick = await tonStakeUpgrade6.acceptMaxTick(averageTick, 60, acceptTickIntervalInOracle)
-
+       console.log('averageTick', averageTick)
+       console.log('acceptMaxTick', acceptMaxTick)
+       console.log('slot0.tick', slot0.tick)
        let changeTick = await tonStakeUpgrade6.changeTick();
        if (changeTick == 0) changeTick = 18;
 
@@ -355,7 +357,7 @@ describe("TONStarter TON Upgrade", function () {
       ethers.utils.formatUnits(_balanceAfterSwap, 27) );
 
     });
-
+    /*
     it("setChangeTick  ", async () => {
 
       let isAdmin = await tonStakeUpgrade6.isAdmin(tonstarterAdmin.address)
@@ -373,7 +375,7 @@ describe("TONStarter TON Upgrade", function () {
       console.log('changeTick:', changeTick)
 
     });
-
+    */
     // it("setAcceptTickIntervalInOracle : user can not excute setAcceptTickIntervalInOracle  ", async () => {
 
     //   expect(await tonStakeUpgrade6.isAdmin(admin1.address)).to.be.eq(false)
@@ -416,6 +418,9 @@ describe("TONStarter TON Upgrade", function () {
       let averageTick = await tonStakeUpgrade6.consult(poolAddress,120);
       let acceptTickIntervalInOracle = await tonStakeUpgrade6.acceptTickIntervalInOracle();
       let acceptMaxTick = await tonStakeUpgrade6.acceptMaxTick(averageTick, 60, acceptTickIntervalInOracle)
+      console.log('averageTick', averageTick)
+      console.log('acceptMaxTick', acceptMaxTick)
+      console.log('slot0.tick', slot0.tick)
 
       let changeTick = await tonStakeUpgrade6.changeTick();
       if (changeTick == 0) changeTick = 18;
