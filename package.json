@@ -19,6 +19,7 @@
     "web3-utils": "^1.10.0"
   },
   "dependencies": {
+    "@nomicfoundation/hardhat-network-helpers": "^1.0.9",
     "@openzeppelin/contracts": "^4.5.0",
     "@openzeppelin/test-helpers": "^0.5.15",
     "dotenv": "^16.0.1",
