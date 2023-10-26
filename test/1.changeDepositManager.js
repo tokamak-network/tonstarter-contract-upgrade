@@ -175,7 +175,7 @@ describe("TONStarter TON Upgrade", function () {
   before(async () => {
     accounts = await ethers.getSigners();
     [admin1] = accounts;
-    console.log("admin1", admin1.address);
+    // console.log("admin1", admin1.address);
     provider = ethers.provider;
     await provider.get
     await hre.ethers.provider.send("hardhat_impersonateAccount", [
@@ -193,23 +193,23 @@ describe("TONStarter TON Upgrade", function () {
 
     it("tosContract ", async () => {
 
-        console.log("PHASE1.SWAPTOS.BURNPERCENT", keccak256("PHASE1.SWAPTOS.BURNPERCENT"))
+        // console.log("PHASE1.SWAPTOS.BURNPERCENT", keccak256("PHASE1.SWAPTOS.BURNPERCENT"))
 
         tosContract = await ethers.getContractAt(tosABI, tosAddress, provider);
-        console.log("tosContract, ", tosContract.address);
+        // console.log("tosContract, ", tosContract.address);
     });
 
     it("tonContract ", async () => {
         tonContract = await ethers.getContractAt(tosABI, tonAddress, provider);
-        console.log("tonContract, ", tonContract.address);
+        // console.log("tonContract, ", tonContract.address);
     });
 
     it("wtonContract ", async () => {
         wtonContract = await ethers.getContractAt(tosABI, wtonAddress, admin1);
-        console.log("wtonContract, ", wtonContract.address);
+        // console.log("wtonContract, ", wtonContract.address);
 
-        const _balance = await wtonContract.connect(admin1).balanceOf(tonStakeProxyAddress);
-        console.log("_balance, ", tonStakeProxyAddress, _balance.toString());
+        // const _balance = await wtonContract.connect(admin1).balanceOf(tonStakeProxyAddress);
+        // console.log("_balance, ", tonStakeProxyAddress, _balance.toString());
     });
 
     it("set TokamakStakeUpgrade7 Logic  ", async () => {
@@ -218,7 +218,7 @@ describe("TONStarter TON Upgrade", function () {
         );
         const tonStakeUpgrade7Dep = await TokamakStakeUpgrade7.deploy();
         let deployedtx = await tonStakeUpgrade7Dep.deployed();
-        console.log("tonStakeUpgrade7 :", tonStakeUpgrade7Dep.address);
+        // console.log("tonStakeUpgrade7 :", tonStakeUpgrade7Dep.address);
         //   console.log('TokamakStakeUpgrade6 deployed tx', deployedtx)
         //= =================================
         const StakeTONProxy2Contract = await ethers.getContractAt(
@@ -226,20 +226,20 @@ describe("TONStarter TON Upgrade", function () {
             tonStakeProxyAddress,
             provider
         );
-        console.log("StakeTONProxy2Contract, ", StakeTONProxy2Contract.address);
+        // console.log("StakeTONProxy2Contract, ", StakeTONProxy2Contract.address);
 
         //= =================================
         // 5 인덱스에 로직이 있는지 먼저 확인하고 설정하자.
         let logicIndex = 5
 
         let imp5 = await StakeTONProxy2Contract.implementation2(logicIndex)
-        console.log("imp5, ", imp5);
+        // console.log("imp5, ", imp5);
 
         if(imp5 == '0x0000000000000000000000000000000000000000') {
             const tx = await StakeTONProxy2Contract.connect(
                 tonstarterAdmin
             ).setImplementation2(tonStakeUpgrade7Dep.address, logicIndex, true);
-            console.log("setImplementation2, ", tx.hash);
+            // console.log("setImplementation2, ", tx.hash);
 
             await tx.wait();
 
@@ -251,7 +251,7 @@ describe("TONStarter TON Upgrade", function () {
             "changeAddresses(address,address,address)"
         );
 
-        console.log("_changeAddressesFunc, ", _changeAddressesFunc );
+        // console.log("_changeAddressesFunc, ", _changeAddressesFunc );
 
         const tx1 = await StakeTONProxy2Contract.connect(
             tonstarterAdmin
@@ -454,7 +454,7 @@ describe("TONStarter TON Upgrade", function () {
       // swap
       const tx = await tonStakeUpgrade6.connect(admin1).exchangeWTONtoTOS(amount);
 
-      console.log('exchangeWTONtoTOS tx:', tx.hash)
+      // console.log('exchangeWTONtoTOS tx:', tx.hash)
 
 
       await tx.wait();
