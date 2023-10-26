@@ -18,7 +18,8 @@ module.exports = {
     hardhat: {
       chainId: 31337,
       forking: {
-        url: `https://eth-mainnet.alchemyapi.io/v2/${process.env.alchemyKey}`
+        url: `https://mainnet.infura.io/v3/${process.env.INFURA_API_KEY}`,
+        blockNumber: 18431020
       },
       allowUnlimitedContractSize: true,
       timeout: 120000
