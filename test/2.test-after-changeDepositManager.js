@@ -169,32 +169,19 @@ function encodePath(path, fees) {
   return encoded.toLowerCase()
 }
 
-describe("TONStarter TON Upgrade", function () {
-  const tonstarterAdminAddress = "0x15280a52E79FD4aB35F4B9Acbb376DCD72b44Fd1";
-
+describe("TONStarter TON #1 Test", function () {
   before(async () => {
     accounts = await ethers.getSigners();
     [admin1] = accounts;
     // console.log("admin1", admin1.address);
     provider = ethers.provider;
     await provider.get
-    await hre.ethers.provider.send("hardhat_impersonateAccount", [
-      tonstarterAdminAddress,
-    ]);
 
-    tonstarterAdmin = await ethers.getSigner(tonstarterAdminAddress);
-    await hre.ethers.provider.send("hardhat_setBalance", [
-      tonstarterAdmin.address,
-      "0x4EE2D6D415B85ACEF8100000000",
-    ]);
   });
 
   describe(" contract  ", () => {
 
     it("tosContract ", async () => {
-
-        // console.log("PHASE1.SWAPTOS.BURNPERCENT", keccak256("PHASE1.SWAPTOS.BURNPERCENT"))
-
         tosContract = await ethers.getContractAt(tosABI, tosAddress, provider);
         // console.log("tosContract, ", tosContract.address);
     });
@@ -207,129 +194,6 @@ describe("TONStarter TON Upgrade", function () {
     it("wtonContract ", async () => {
         wtonContract = await ethers.getContractAt(tosABI, wtonAddress, admin1);
         // console.log("wtonContract, ", wtonContract.address);
-
-        // const _balance = await wtonContract.connect(admin1).balanceOf(tonStakeProxyAddress);
-        // console.log("_balance, ", tonStakeProxyAddress, _balance.toString());
-    });
-
-    it("set TokamakStakeUpgrade7 Logic  ", async () => {
-        const TokamakStakeUpgrade7 = await ethers.getContractFactory(
-            "TokamakStakeUpgrade7"
-        );
-        const tonStakeUpgrade7Dep = await TokamakStakeUpgrade7.deploy();
-        let deployedtx = await tonStakeUpgrade7Dep.deployed();
-        // console.log("tonStakeUpgrade7 :", tonStakeUpgrade7Dep.address);
-        //   console.log('TokamakStakeUpgrade6 deployed tx', deployedtx)
-        //= =================================
-        const StakeTONProxy2Contract = await ethers.getContractAt(
-            StakeTONProxy2Abi,
-            tonStakeProxyAddress,
-            provider
-        );
-        // console.log("StakeTONProxy2Contract, ", StakeTONProxy2Contract.address);
-
-        //= =================================
-        // 5 인덱스에 로직이 있는지 먼저 확인하고 설정하자.
-        let logicIndex = 5
-
-        let imp5 = await StakeTONProxy2Contract.implementation2(logicIndex)
-        // console.log("imp5, ", imp5);
-
-        if(imp5 == '0x0000000000000000000000000000000000000000') {
-            const tx = await StakeTONProxy2Contract.connect(
-                tonstarterAdmin
-            ).setImplementation2(tonStakeUpgrade7Dep.address, logicIndex, true);
-            // console.log("setImplementation2, ", tx.hash);
-
-            await tx.wait();
-
-            // let receipt1 = await ethers.provider.getTransactionReceipt(tx.hash)
-            // console.log('setImplementation2 tx', receipt1)
-        }
-
-        const _changeAddressesFunc = Web3EthAbi.encodeFunctionSignature(
-            "changeAddresses(address,address,address)"
-        );
-
-        console.log("_changeAddressesFunc, ", _changeAddressesFunc );
-
-        const tx1 = await StakeTONProxy2Contract.connect(
-            tonstarterAdmin
-        ).setSelectorImplementations2(
-            [
-                _changeAddressesFunc
-            ],
-            tonStakeUpgrade7Dep.address);
-
-
-        await tx1.wait();
-
-      //  let receipt1 = await ethers.provider.getTransactionReceipt(tx1.hash)
-      // console.log('setSelectorImplementations2 tx', receipt1)
-
-    });
-
-    it("tonStakeUpgrade6  ", async () => {
-      tonStakeUpgrade6 = await ethers.getContractAt(
-        TokamakStakeUpgrade6Abi,
-        tonStakeProxyAddress,
-        provider
-      );
-    });
-
-    it("tonStakeUpgrade7  ", async () => {
-      tonStakeUpgrade7 = await ethers.getContractAt(
-        TokamakStakeUpgrade7Abi,
-        tonStakeProxyAddress,
-        provider
-      );
-    });
-
-    it("tonStake1  ", async () => {
-      tonStake1 = await ethers.getContractAt(
-        StakeTONProxy2Abi,
-        tonStakeProxyAddress,
-        provider
-      );
-    });
-
-    it("changeAddress test with tonStakeUpgrade7 ", async () => {
-
-      stakeContract = await ethers.getContractAt(
-          TokamakStakeUpgradeAbi,
-          tonStakeProxyAddress,
-          provider
-      );
-
-      // let canTokamakRequestUnStaking = await stakeContract.canTokamakRequestUnStaking(tokamakAddress.oldLayer2)
-      // console.log('canTokamakRequestUnStaking', canTokamakRequestUnStaking)
-      expect(
-        compareRayBalance(await stakeContract.canTokamakRequestUnStaking(tokamakAddress.oldLayer2),
-        ethers.constants.Zero)
-        ).to.be.eq(true)
-    })
-
-    it("changeAddress test with tonStakeUpgrade7 ", async () => {
-        // console.log('tonstarterAdmin',tonstarterAdmin.address )
-        // let isAdmin = await tonStake1.isAdmin(tonstarterAdmin.address)
-        // console.log('isAdmin',isAdmin)
-
-        await expect(
-          tonStakeUpgrade7.connect(admin1).changeAddresses(
-            tokamakAddress.depositManager,
-            tokamakAddress.seigManager,
-            tokamakAddress.newLayer2
-          )
-        ).to.be.revertedWith(
-          "caller is not admin"
-        );
-
-        await (await tonStakeUpgrade7.connect(tonstarterAdmin).changeAddresses(
-            tokamakAddress.depositManager,
-            tokamakAddress.seigManager,
-            tokamakAddress.newLayer2
-        )).wait()
-
     });
 
     it("Manage > Unstake from Layer2", async () => {

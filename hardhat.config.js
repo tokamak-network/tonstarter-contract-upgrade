@@ -7,6 +7,8 @@ require("@nomiclabs/hardhat-etherscan");
 require("dotenv/config");
 require("dotenv").config();
 
+require("hardhat-gas-reporter");
+
 //https://eth-mainnet.g.alchemy.com/v2/4YQ2qN3WAMM0goUFbRpWfaXjL5_BwU-o
 //https://eth-mainnet.alchemyapi.io/v2/${process.env.alchemyKey}
 
@@ -49,7 +51,16 @@ module.exports = {
     coinmarketcap: `${process.env.COINMARKETCAP_API_KEY}`
   },
   solidity: {
-    version: "0.8.4",
+    // version: "0.8.4",
+    compilers: [
+      {
+        version: "0.5.5",
+      },
+      {
+        version: "0.6.7",
+        settings: {},
+      },
+    ],
     settings: {
       optimizer: {
         enabled: true,
