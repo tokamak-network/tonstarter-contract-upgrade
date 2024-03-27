@@ -20,11 +20,11 @@ module.exports = {
     hardhat: {
       chainId: 31337,
       forking: {
-        url: `https://mainnet.infura.io/v3/${process.env.INFURA_API_KEY}`,
-        blockNumber: 18431020
+        url: `https://mainnet.infura.io/v3/${process.env.InfuraKey}`,
+        blockNumber: 19523983
       },
       allowUnlimitedContractSize: true,
-      timeout: 120000
+      // timeout: 120000
     },
     local: {
       // chainId: 31337,
@@ -51,16 +51,16 @@ module.exports = {
     coinmarketcap: `${process.env.COINMARKETCAP_API_KEY}`
   },
   solidity: {
-    // version: "0.8.4",
-    compilers: [
-      {
-        version: "0.5.5",
-      },
-      {
-        version: "0.6.7",
-        settings: {},
-      },
-    ],
+    version: "0.8.4",
+    // compilers: [
+    //   {
+    //     version: "0.5.5",
+    //   },
+    //   {
+    //     version: "0.6.7",
+    //     settings: {},
+    //   },
+    // ],
     settings: {
       optimizer: {
         enabled: true,
