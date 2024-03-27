@@ -24,7 +24,7 @@ module.exports = {
         blockNumber: 19523983
       },
       allowUnlimitedContractSize: true,
-      // timeout: 120000
+      timeout: 120000
     },
     local: {
       // chainId: 31337,

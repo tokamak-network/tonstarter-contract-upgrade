@@ -19,7 +19,7 @@ let epochUnit,  maxTime;
 let tosAddress = "0x409c4D8cd5d2924b9bc5509230d16a61289c8153"
 let tosAdminAddress = "0x12A936026F072d4e97047696A9d11F97Eae47d21"
 let tosAdmin
-
+let startTime
 let lockIds = []
 // {account: , lockId: , value: , unlockTime }
 // locakTOS 를 새로 포팅하고, 초기화 정보를 설정하고,
@@ -32,6 +32,18 @@ let lockIds = []
 // 새로 배포하자.
 // 1. LockTOSProxy , LockTOS
 //
+
+
+function findAccount(accountAddress)
+{
+  let curAccount = user1
+  if (user1.address == accountAddress)  curAccount = user1;
+  else if (user2.address == accountAddress)  curAccount = user2;
+  else if (user3.address == accountAddress)  curAccount = user3;
+  else if (user4.address == accountAddress)  curAccount = user4;
+
+  return curAccount
+}
 
 function decimalToHexString(number)
 {
@@ -62,6 +74,86 @@ async function allowance(
   }
 }
 
+async function createLock (user, amount) {
+  const maxTime_ = await lockTOS.maxTime()
+  const epochUnit_ = await lockTOS.epochUnit()
+  const unlockWeeks = maxTime_.div(epochUnit_)
+
+  await allowance(tosContract, user, lockTOS, amount)
+  let startProcess = Date.now()
+  const receipt = await (await lockTOS.connect(user).createLock(amount, unlockWeeks)).wait()
+  console.log('createLock process :', (Date.now()) - startProcess)
+  const topic = lockTOS.interface.getEventTopic('LockCreated');
+  const log = receipt.logs.find(x => x.topics.indexOf(topic) >= 0);
+  const deployedEvent = lockTOS.interface.parseLog(log);
+
+  lockIds.push(
+    {
+      account: deployedEvent.args.account,
+      lockId: deployedEvent.args.lockId,
+      value: deployedEvent.args.value,
+      unlockTime: deployedEvent.args.unlockTime
+    }
+  )
+}
+
+async function depositFor (index, amount) {
+  let curLockId = lockIds[index]
+  let curAccount = findAccount(curLockId.account)
+  let info = await lockTOS.locksInfo(curLockId.lockId)
+  let block1 = await ethers.provider.getBlock('latest')
+  expect(info.end.toNumber()).to.be.gte(block1.timestamp)
+
+  await allowance(tosContract, curAccount, lockTOS, amount)
+  let startProcess = Date.now()
+  const receipt = await (await lockTOS.connect(curAccount).depositFor(
+    curLockId.account,
+    curLockId.lockId,
+    amount)
+  ).wait()
+  console.log('depositFor process :', (Date.now()) - startProcess)
+  const topic = lockTOS.interface.getEventTopic('LockDeposited');
+  const log = receipt.logs.find(x => x.topics.indexOf(topic) >= 0);
+  const deployedEvent = lockTOS.interface.parseLog(log);
+  lockIds[index].value = curLockId.value.add(deployedEvent.args.value)
+}
+
+async function increaseUnlockTime(index) {
+    let curLockId = lockIds[index]
+    let curAccount = findAccount(curLockId.account)
+    let info = await lockTOS.locksInfo(curLockId.lockId)
+    let block1 = await ethers.provider.getBlock('latest')
+    expect(info.end.toNumber()).to.be.gte(block1.timestamp)
+
+    let _unlockWeeks = (maxTime - (info.end.toNumber() - block1.timestamp)) / epochUnit
+    _unlockWeeks = parseInt(_unlockWeeks)
+
+    let startProcess = Date.now()
+    const receipt = await (await lockTOS.connect(curAccount).increaseUnlockTime(
+      curLockId.lockId,
+      _unlockWeeks)
+    ).wait()
+
+    console.log('increaseUnlockTime process :', (Date.now()) - startProcess)
+    // const topic = lockTOS.interface.getEventTopic('LockUnlockTimeIncreased');
+    // const log = receipt.logs.find(x => x.topics.indexOf(topic) >= 0);
+    // const deployedEvent = lockTOS.interface.parseLog(log);
+}
+
+async function passTime (periodTime) {
+  // let block = await ethers.provider.getBlock('latest')
+  // let periodTime = 60*60*24
+  let blockLen = periodTime / 12
+  let hexLen = "0x"+decimalToHexString(blockLen);
+
+  await ethers.provider.send("evm_increaseTime", [periodTime])
+  await hre.network.provider.send("hardhat_mine", [hexLen]);
+  let block1 = await ethers.provider.getBlock('latest')
+  let epochCounts = (block1.timestamp - startTime) /  epochUnit
+
+  console.log('epochCounts', epochCounts)
+  console.log('maxCounts', maxTime / epochUnit)
+}
 
 describe("LockTOS Test", function () {
 
@@ -134,249 +226,217 @@ describe("LockTOS Test", function () {
     });
 
     it("createLock : 1", async () => {
+      let block1 = await ethers.provider.getBlock('latest')
+      startTime = block1.timestamp
+
       const amount = ethers.utils.parseEther("100")
+      await createLock (user1, amount)
 
-      const maxTime_ = await lockTOS.maxTime()
-      const epochUnit_ = await lockTOS.epochUnit()
-      const unlockWeeks = maxTime_.div(epochUnit_)
-
-      await allowance(tosContract, user1, lockTOS, amount)
-      const receipt = await (await lockTOS.connect(user1).createLock(amount, unlockWeeks)).wait()
-
-
-      const topic = lockTOS.interface.getEventTopic('LockCreated');
-      const log = receipt.logs.find(x => x.topics.indexOf(topic) >= 0);
-      const deployedEvent = lockTOS.interface.parseLog(log);
-
-      lockIds.push(
-        {
-          account: deployedEvent.args.account,
-          lockId: deployedEvent.args.lockId,
-          value: deployedEvent.args.value,
-          unlockTime: deployedEvent.args.value
-        }
-      )
     });
 
     it("createLock : 2 ", async () => {
       const amount = ethers.utils.parseEther("100")
-
-      const maxTime_ = await lockTOS.maxTime()
-      const epochUnit_ = await lockTOS.epochUnit()
-      const unlockWeeks = maxTime_.div(epochUnit_)
-
-      await allowance(tosContract, user2, lockTOS, amount)
-      const receipt = await (await lockTOS.connect(user2).createLock(amount, unlockWeeks)).wait()
-
-
-      const topic = lockTOS.interface.getEventTopic('LockCreated');
-      const log = receipt.logs.find(x => x.topics.indexOf(topic) >= 0);
-      const deployedEvent = lockTOS.interface.parseLog(log);
-
-      lockIds.push(
-        {
-          account: deployedEvent.args.account,
-          lockId: deployedEvent.args.lockId,
-          value: deployedEvent.args.value,
-          unlockTime: deployedEvent.args.value
-        }
-      )
+      await createLock (user2, amount)
     });
 
     it("createLock : 3 ", async () => {
       const amount = ethers.utils.parseEther("100")
-
-      const maxTime_ = await lockTOS.maxTime()
-      const epochUnit_ = await lockTOS.epochUnit()
-      const unlockWeeks = maxTime_.div(epochUnit_)
-
-      await allowance(tosContract, user3, lockTOS, amount)
-      const receipt = await (await lockTOS.connect(user3).createLock(amount, unlockWeeks)).wait()
-
-
-      const topic = lockTOS.interface.getEventTopic('LockCreated');
-      const log = receipt.logs.find(x => x.topics.indexOf(topic) >= 0);
-      const deployedEvent = lockTOS.interface.parseLog(log);
-
-      lockIds.push(
-        {
-          account: deployedEvent.args.account,
-          lockId: deployedEvent.args.lockId,
-          value: deployedEvent.args.value,
-          unlockTime: deployedEvent.args.value
-        }
-      )
+      await createLock (user3, amount)
     });
 
     it("createLock : 4 ", async () => {
       const amount = ethers.utils.parseEther("100")
-
-      const maxTime_ = await lockTOS.maxTime()
-      const epochUnit_ = await lockTOS.epochUnit()
-      const unlockWeeks = maxTime_.div(epochUnit_)
-      console.log('maxTime_', maxTime_)
-      console.log('epochUnit_', epochUnit_)
-
-      await allowance(tosContract, user4, lockTOS, amount)
-      const receipt = await (await lockTOS.connect(user4).createLock(amount, unlockWeeks)).wait()
-
-
-      const topic = lockTOS.interface.getEventTopic('LockCreated');
-      const log = receipt.logs.find(x => x.topics.indexOf(topic) >= 0);
-      const deployedEvent = lockTOS.interface.parseLog(log);
-
-      lockIds.push(
-        {
-          account: deployedEvent.args.account,
-          lockId: deployedEvent.args.lockId,
-          value: deployedEvent.args.value,
-          unlockTime: deployedEvent.args.value
-        }
-      )
+      await createLock (user4, amount)
     });
 
     it("      pass time : 1 day ", async function () {
-        let block = await ethers.provider.getBlock('latest')
-
         let periodTime = 60*60*24
-        let blockLen = periodTime / 12
-        let hexLen = "0x"+decimalToHexString(blockLen);
-
-        await ethers.provider.send("evm_increaseTime", [periodTime])
-        await hre.network.provider.send("hardhat_mine", [hexLen]);
-        let block1 = await ethers.provider.getBlock('latest')
-
-        // console.log('passed time ', block1.timestamp - block.timestamp)
-        // console.log('passed blocks ', block1.number - block.number)
-
+        await passTime (periodTime)
     })
 
     it("depositFor : 1", async () => {
+      let index = 0
+      const amount = ethers.utils.parseEther("50")
+      await depositFor (index, amount)
+    });
 
-      let curLockId = lockIds[0]
-      let curAccount = user1;
-      console.log(curLockId)
-      // console.log(curAccount)
+    it("createLock : 1", async () => {
+      const amount = ethers.utils.parseEther("10")
+      await createLock (user1, amount)
+    });
 
-      if (user1.address == curLockId.account)  curAccount = user1;
-      else if (user2.address == curLockId.account)  curAccount = user2;
-      else if (user3.address == curLockId.account)  curAccount = user3;
-      else if (user4.address == curLockId.account)  curAccount = user4;
-      console.log(curAccount.address)
+    it("      pass time : 1 day ", async function () {
 
+      let periodTime = 60*60*24
+      await passTime (periodTime)
+    })
 
-      let info = await lockTOS.locksInfo(curLockId.lockId)
-      console.log(info)
+    it("depositFor : 2", async () => {
+      let index = 1
+      const amount = ethers.utils.parseEther("100")
 
-      let block1 = await ethers.provider.getBlock('latest')
-      console.log(block1)
-
-      const amount = ethers.utils.parseEther("1")
-
-      // const maxTime_ = await lockTOS.maxTime()
-      // const epochUnit_ = await lockTOS.epochUnit()
-      // const unlockWeeks = maxTime_.div(epochUnit_)
-
-      await allowance(tosContract, curAccount, lockTOS, amount)
-
-      const receipt = await (await lockTOS.connect(curAccount).depositFor(
-        curLockId.account,
-        curLockId.lockId,
-        amount)
-      ).wait()
-      console.log(receipt)
-
-      const topic = lockTOS.interface.getEventTopic('LockDeposited');
-      const log = receipt.logs.find(x => x.topics.indexOf(topic) >= 0);
-      const deployedEvent = lockTOS.interface.parseLog(log);
-      console.log(deployedEvent.args)
-
-      lockIds[0].value =  curLockId.value.add(deployedEvent.args.value)
+      await depositFor (index, amount)
 
     });
 
-    // it("createLock : 1", async () => {
-    //   const amount = ethers.utils.parseEther("10")
+    it("createLock : 3", async () => {
+      const amount = ethers.utils.parseEther("100")
+      await createLock (user2, amount)
+    });
 
-    //   const maxTime_ = await lockTOS.maxTime()
-    //   const epochUnit_ = await lockTOS.epochUnit()
-    //   const unlockWeeks = maxTime_.div(epochUnit_)
+    it("      pass time : 1 day ", async function () {
 
-    //   await allowance(tosContract, user1, lockTOS, amount)
-    //   const receipt = await (await lockTOS.connect(user1).createLock(amount, unlockWeeks)).wait()
+      let periodTime = 60*60*24
+      await passTime (periodTime)
+    })
+
+    it("depositFor : 3 ", async () => {
+      let index = 2
+      const amount = ethers.utils.parseEther("100")
+      await depositFor (index, amount)
+
+    });
+
+    it("depositFor : 4 ", async () => {
+      let index = 3
+      const amount = ethers.utils.parseEther("100")
+      await depositFor (index, amount)
 
 
-    //   const topic = lockTOS.interface.getEventTopic('LockCreated');
-    //   const log = receipt.logs.find(x => x.topics.indexOf(topic) >= 0);
-    //   const deployedEvent = lockTOS.interface.parseLog(log);
+    });
 
-    //   lockIds.push(
-    //     {
-    //       account: deployedEvent.args.account,
-    //       lockId: deployedEvent.args.lockId,
-    //       value: deployedEvent.args.value,
-    //       unlockTime: deployedEvent.args.value
-    //     }
-    //   )
+    it("      pass time : 1 day ", async function () {
+
+      let periodTime = 60*60*24
+      await passTime (periodTime)
+    })
+
+    it("increaseUnlockTime : 1 ", async () => {
+      let index = 0
+      await increaseUnlockTime(index)
+    });
+
+
+    it("increaseUnlockTime : 2 ", async () => {
+      let index = 1
+      await increaseUnlockTime(index)
+
+    });
+
+    it("increaseUnlockTime : 3 ", async () => {
+      let index = 2
+      await increaseUnlockTime(index)
+
+    });
+
+    it("      pass time : 1 day ", async function () {
+
+      let periodTime = 60*60*24
+      await passTime (periodTime)
+    })
+
+    it("depositFor : 1", async () => {
+      let index = 0
+      const amount = ethers.utils.parseEther("100")
+      await depositFor (index, amount)
+
+    });
+
+    it("createLock : 1", async () => {
+      const amount = ethers.utils.parseEther("200")
+      await createLock (user1, amount)
+    });
+
+    it("      pass time : 1 day ", async function () {
+      let periodTime = 60*60*24
+      await passTime (periodTime)
+    })
+
+    it("createLock : 2", async () => {
+      const amount = ethers.utils.parseEther("200")
+      await createLock (user2, amount)
+    });
+
+    it("createLock : 3", async () => {
+      const amount = ethers.utils.parseEther("200")
+      await createLock (user3, amount)
+    });
+
+    it("depositFor : 1", async () => {
+      let index = 0
+      const amount = ethers.utils.parseEther("100")
+      await depositFor (index, amount)
+    });
+
+    it("      pass time : 1 day ", async function () {
+      let periodTime = 60*60*24
+      await passTime (periodTime)
+    })
+
+    it("depositFor : 2", async () => {
+      let index = 1
+      const amount = ethers.utils.parseEther("100")
+      await depositFor (index, amount)
+    });
+
+    it("increaseUnlockTime : 2 ", async () => {
+      let index = 1
+      await increaseUnlockTime(index)
+
+    });
+
+    it("      pass time : 2 day ** ", async function () {
+      let periodTime = 60*60*24*2
+      await passTime (periodTime)
+    })
+
+    it("depositFor : 2", async () => {
+      let index = 1
+      const amount = ethers.utils.parseEther("100")
+      await depositFor (index, amount)
+    });
+    it("increaseUnlockTime : 2 ", async () => {
+      let index = 1
+      await increaseUnlockTime(index)
+
+    });
+
+    it("increaseUnlockTime : 3 ", async () => {
+      let index = 2
+      await increaseUnlockTime(index)
+
+    });
+
+    it("      pass time : 5 day ", async function () {
+      let periodTime = 60*60*24*5
+      await passTime (periodTime)
+    })
+
+    it("increaseUnlockTime : 3 ", async () => {
+      let index = 2
+      await increaseUnlockTime(index)
+
+    });
+
+    it("createLock : 1", async () => {
+      const amount = ethers.utils.parseEther("200")
+      await createLock (user1, amount)
+    });
+
+    it("      pass time : 5 day ", async function () {
+      let periodTime = 60*60*24*5
+      await passTime (periodTime)
+    })
+
+    it("createLock : 1", async () => {
+      const amount = ethers.utils.parseEther("200")
+      await createLock (user1, amount)
+    });
+
+    // it("increaseUnlockTime : 3 ", async () => {
+    //   let index = lockIds.length-1
+    //   await increaseUnlockTime(index)
     // });
-
-    // it("      pass time : 1 day ", async function () {
-    //   let block = await ethers.provider.getBlock('latest')
-
-    //   let periodTime = 60*60*24
-    //   let blockLen = periodTime / 12
-    //   let hexLen = "0x"+decimalToHexString(blockLen);
-
-    //   await ethers.provider.send("evm_increaseTime", [periodTime])
-    //   await hre.network.provider.send("hardhat_mine", [hexLen]);
-    //   let block1 = await ethers.provider.getBlock('latest')
-
-    //   // console.log('passed time ', block1.timestamp - block.timestamp)
-    //   // console.log('passed blocks ', block1.number - block.number)
-
-    // })
-
-    // it("createLock : 2", async () => {
-    //   const amount = ethers.utils.parseEther("10")
-
-    //   const maxTime_ = await lockTOS.maxTime()
-    //   const epochUnit_ = await lockTOS.epochUnit()
-    //   const unlockWeeks = maxTime_.div(epochUnit_)
-
-    //   await allowance(tosContract, user2, lockTOS, amount)
-    //   const receipt = await (await lockTOS.connect(user2).createLock(amount, unlockWeeks)).wait()
-
-    //   const topic = lockTOS.interface.getEventTopic('LockCreated');
-    //   const log = receipt.logs.find(x => x.topics.indexOf(topic) >= 0);
-    //   const deployedEvent = lockTOS.interface.parseLog(log);
-
-    //   lockIds.push(
-    //     {
-    //       account: deployedEvent.args.account,
-    //       lockId: deployedEvent.args.lockId,
-    //       value: deployedEvent.args.value,
-    //       unlockTime: deployedEvent.args.value
-    //     }
-    //   )
-    // });
-
-    // it("      pass time : 1 day ", async function () {
-    //   let block = await ethers.provider.getBlock('latest')
-
-    //   let periodTime = 60*60*24
-    //   let blockLen = periodTime / 12
-    //   let hexLen = "0x"+decimalToHexString(blockLen);
-
-    //   await ethers.provider.send("evm_increaseTime", [periodTime])
-    //   await hre.network.provider.send("hardhat_mine", [hexLen]);
-    //   let block1 = await ethers.provider.getBlock('latest')
-
-    //   // console.log('passed time ', block1.timestamp - block.timestamp)
-    //   // console.log('passed blocks ', block1.number - block.number)
-
-    // })
-
-
 
   });
 
