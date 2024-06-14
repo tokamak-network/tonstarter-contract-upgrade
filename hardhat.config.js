@@ -21,7 +21,7 @@ module.exports = {
       chainId: 31337,
       forking: {
         url: `https://mainnet.infura.io/v3/${process.env.InfuraKey}`,
-        blockNumber: 19523983
+        // blockNumber: 19523983
       },
       allowUnlimitedContractSize: true,
       timeout: 120000
